@@ -18,13 +18,37 @@
  */
 
 #include <stdint.h>
+#include "stm32f0xx.h"
 
 #if !defined(__SOFT_FP__) && defined(__ARM_FP)
   #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
 #endif
 
+void delay(volatile uint32_t ticks)
+{
+	for (volatile uint32_t i = 0; i < ticks; i++) {}
+}
+
 int main(void)
 {
+	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
+	GPIOA->MODER |= GPIO_MODER_MODER5_0;
+
+	uint8_t sequence[32] = {1,0,1,0,1,0,0,1,1,1,0,1,1,1,0,1,1,1,0,0,1,0,1,0,1,0,0,0,0,0,0,0};
+	uint8_t pos = 0;
+
     /* Loop forever */
-	for(;;);
+	for(;;)
+	{
+		//GPIOA->ODR ^= (1<<5); // toggle
+
+		if (pos > 31) pos = 0;
+
+		if (sequence[pos++])
+			GPIOA->BSRR = (1<<5);
+		else
+			GPIOA->BRR = (1<<5);
+
+		delay(100000);
+	}
 }

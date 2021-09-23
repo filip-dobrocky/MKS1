@@ -34,21 +34,26 @@ int main(void)
 	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
 	GPIOA->MODER |= GPIO_MODER_MODER5_0;
 
-	uint8_t sequence[32] = {1,0,1,0,1,0,0,1,1,1,0,1,1,1,0,1,1,1,0,0,1,0,1,0,1,0,0,0,0,0,0,0};
-	uint8_t pos = 0;
+	uint32_t binary_seq = 0b10101001110111011100101010000000;
+	uint8_t i, j;
 
     /* Loop forever */
 	for(;;)
 	{
 		//GPIOA->ODR ^= (1<<5); // toggle
 
-		if (pos > 31) pos = 0;
+		for (i = 0; i < 32; i++)
+		{
+			if ((binary_seq >> i) & 1)
+			{
+				GPIOA->BSRR = (1<<5);
+			}
+			else
+			{
+				GPIOA->BRR = (1<<5);
+			}
 
-		if (sequence[pos++])
-			GPIOA->BSRR = (1<<5);
-		else
-			GPIOA->BRR = (1<<5);
-
-		delay(100000);
+			delay(100000);
+		}
 	}
 }

@@ -21,7 +21,7 @@
 #include "stm32f0xx.h"
 
 #if !defined(__SOFT_FP__) && defined(__ARM_FP)
-  #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
+#warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
 #endif
 
 #define LED_TIME_BLINK 300
@@ -31,7 +31,7 @@
 
 volatile uint32_t Tick;
 
-void configure_GPIO(void)
+static void configure_GPIO(void)
 {
 	RCC->AHBENR |= RCC_AHBENR_GPIOAEN | RCC_AHBENR_GPIOBEN | RCC_AHBENR_GPIOCEN; // enable
 	GPIOA->MODER |= GPIO_MODER_MODER4_0; // LED1 = PA4, output
@@ -40,7 +40,7 @@ void configure_GPIO(void)
 	GPIOC->PUPDR |= GPIO_PUPDR_PUPDR1_0; // S1 = PC1, pullup
 }
 
-void configure_external_it(void)
+static void configure_external_it(void)
 {
 	RCC->APB2ENR |= RCC_APB2ENR_SYSCFGEN;
 	SYSCFG->EXTICR[0] |= SYSCFG_EXTICR1_EXTI0_PC; // select PC0 for EXTI0
@@ -77,15 +77,23 @@ void tlacitka(void)
 	static uint32_t off_time;
 	static uint32_t delay;
 	static uint16_t debounce = 0xFFFF;
+	static uint32_t old_s2;
 
 	if (Tick > delay + SAMPLING_PERIOD) {
 		uint32_t s1 = GPIOC->IDR & (1<<1);
+		uint32_t new_s2 = GPIOC->IDR & (1<<0);
+
 		debounce <<= 1;
 		if (s1) debounce |= 0x0001;
 		if (debounce == 0x7FFF) {
 			off_time = Tick + LED_TIME_LONG;
 			GPIOB->BSRR = (1<<0);
 		}
+		if (old_s2 && !new_s2) {
+			off_time = Tick + LED_TIME_SHORT;
+			GPIOB->BSRR = (1<<0);
+		}
+		old_s2 = new_s2;
 		delay = Tick;
 	}
 
@@ -102,7 +110,7 @@ int main(void)
 	SysTick_Config(8000); // 1ms
 
 
-    /* Loop forever */
+	/* Loop forever */
 	for(;;) {
 		blikac();
 		tlacitka();

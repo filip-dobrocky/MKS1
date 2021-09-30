@@ -25,6 +25,9 @@
 #endif
 
 #define LED_TIME_BLINK 300
+#define LED_TIME_SHORT 100
+#define LED_TIME_LONG 1000
+#define SAMPLING_PERIOD 40
 
 volatile uint32_t Tick;
 
@@ -50,7 +53,7 @@ void EXTI0_1_IRQHandler(void)
 {
 	if (EXTI->PR & EXTI_PR_PR0) { // check line 0 has triggered the IT
 		EXTI->PR |= EXTI_PR_PR0; // clear the pending bit
-		GPIOB->ODR ^= (1 << 0);
+		GPIOB->ODR ^= (1<<0);
 	}
 }
 
@@ -64,24 +67,51 @@ void blikac(void)
 	static uint32_t delay;
 
 	if (Tick > delay + LED_TIME_BLINK) {
-		GPIOA->ODR ^= (1 << 4);
+		GPIOA->ODR ^= (1<<4);
 		delay = Tick;
 	}
 }
 
+void tlacitka(void)
+{
+	static uint32_t old_s1, old_s2;
+	static uint32_t off_time;
+	static uint32_t delay;
 
+	if (Tick > delay + SAMPLING_PERIOD) {
+		uint32_t new_s1 = GPIOC->IDR & (1<<1);
+		uint32_t new_s2 = GPIOC->IDR & (1<<0);
+
+		if (old_s2 && !new_s2) { // falling edge
+			off_time = Tick + LED_TIME_SHORT;
+			GPIOB->BSRR = (1<<0);
+		} else if (old_s1 && !new_s1) {
+			off_time = Tick + LED_TIME_LONG;
+			GPIOB->BSRR = (1<<0);
+		}
+
+		old_s1 = new_s1;
+		old_s2 = new_s2;
+
+		delay = Tick;
+	}
+
+	if (Tick > off_time) {
+		GPIOB->BRR = (1<<0);
+	}
+}
 
 int main(void)
 {
 	configure_GPIO();
-	configure_external_it();
+	//configure_external_it();
 
 	SysTick_Config(8000); // 1ms
 
 
     /* Loop forever */
-	for(;;)
-	{
+	for(;;) {
 		blikac();
+		tlacitka();
 	}
 }

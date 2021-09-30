@@ -27,7 +27,7 @@
 #define LED_TIME_BLINK 300
 #define LED_TIME_SHORT 100
 #define LED_TIME_LONG 1000
-#define SAMPLING_PERIOD 40
+#define SAMPLING_PERIOD 5
 
 volatile uint32_t Tick;
 
@@ -74,25 +74,18 @@ void blikac(void)
 
 void tlacitka(void)
 {
-	static uint32_t old_s1, old_s2;
 	static uint32_t off_time;
 	static uint32_t delay;
+	static uint16_t debounce = 0xFFFF;
 
 	if (Tick > delay + SAMPLING_PERIOD) {
-		uint32_t new_s1 = GPIOC->IDR & (1<<1);
-		uint32_t new_s2 = GPIOC->IDR & (1<<0);
-
-		if (old_s2 && !new_s2) { // falling edge
-			off_time = Tick + LED_TIME_SHORT;
-			GPIOB->BSRR = (1<<0);
-		} else if (old_s1 && !new_s1) {
+		uint32_t s1 = GPIOC->IDR & (1<<1);
+		debounce <<= 1;
+		if (s1) debounce |= 0x0001;
+		if (debounce == 0x7FFF) {
 			off_time = Tick + LED_TIME_LONG;
 			GPIOB->BSRR = (1<<0);
 		}
-
-		old_s1 = new_s1;
-		old_s2 = new_s2;
-
 		delay = Tick;
 	}
 

@@ -8,8 +8,8 @@
 #ifndef SCT_H_
 #define SCT_H_
 
-#include "stm32f0xx.h"
-#include "main.h"
+#include <stdint.h>
+
 
 void sct_init(void);
 void sct_led(uint32_t value);

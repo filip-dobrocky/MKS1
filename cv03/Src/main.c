@@ -18,41 +18,18 @@
  */
 
 #include <stdint.h>
-#include "stm32f0xx.h"
+#include "sct.h"
 
 #if !defined(__SOFT_FP__) && defined(__ARM_FP)
-  #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
+#warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
 #endif
-
-void delay(uint32_t ticks)
-{
-	for (volatile uint32_t i = 0; i < ticks; i++) {}
-}
 
 int main(void)
 {
-	RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
-	GPIOA->MODER |= GPIO_MODER_MODER5_0;
+	sct_init();
 
-	uint32_t binary_seq = 0b10101001110111011100101010000000;
-
-    /* Loop forever */
-	for(;;)
-	{
-		//GPIOA->ODR ^= (1<<5); // toggle
-
-		for (uint8_t i = 0; i < 32; i++)
-		{
-			if ((binary_seq >> i) & 1)
-			{
-				GPIOA->BSRR = (1<<5);
-			}
-			else
-			{
-				GPIOA->BRR = (1<<5);
-			}
-
-			delay(100000);
-		}
+	/* Loop forever */
+	for(;;) {
+		sct_led(0x7A5C36DE);
 	}
 }

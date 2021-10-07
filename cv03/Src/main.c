@@ -24,12 +24,22 @@
 #warning "FPU is not initialized, but the project is compiling for an FPU. Please initialize the FPU before use."
 #endif
 
+static void delay(uint32_t ticks)
+{
+	for (volatile uint32_t i = 0; i < ticks; i++) {}
+}
+
 int main(void)
 {
 	sct_init();
 
 	/* Loop forever */
 	for(;;) {
-		sct_led(0x7A5C36DE);
+		//sct_led(0x7A5C36DE);
+
+		for (uint16_t i = 111; i <= 999; i += 111) {
+			sct_value(i);
+			delay(500000);
+		}
 	}
 }

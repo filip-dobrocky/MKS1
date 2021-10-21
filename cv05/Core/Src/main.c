@@ -119,7 +119,7 @@ static void uart_process_command(char* cmd)
     uint8_t value[EEPROM_SIZE];
     HAL_I2C_Mem_Read(&hi2c1, EEPROM_ADDR, 0, I2C_MEMADD_SIZE_16BIT, value, EEPROM_SIZE, 1000);
     for (int i = 0; i < EEPROM_SIZE; i++) {
-      printf("%02x%c", value[i], (i != 0 && (i + 1) % 8 == 0) ? '\n' : ' ');
+      printf("%02X%c", value[i], (i != 0 && (i + 1) % 8 == 0) ? '\n' : ' ');
     }
   }
 }

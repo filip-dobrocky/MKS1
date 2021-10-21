@@ -94,12 +94,12 @@ static void uart_process_command(char* cmd)
   } else if (strcasecmp(token, "LED1") == 0) {
 	token = strtok(NULL, " ");
     if (strcasecmp(token, "ON") == 0) HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
-    else if (strcasecmp(token, "OFF")) HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+    else if (strcasecmp(token, "OFF") == 0) HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
     printf("OK\n");
   } else if (strcasecmp(token, "LED2") == 0) {
     token = strtok(NULL, " ");
 	if (strcasecmp(token, "ON") == 0) HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
-    else if (strcasecmp(token, "OFF")) HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_RESET);
+    else if (strcasecmp(token, "OFF") == 0) HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_RESET);
     printf("OK\n");
   } else if (strcasecmp(token, "STATUS") == 0) {
 	printf("LED1: %s, LED2: %s\n", HAL_GPIO_ReadPin(LED1_GPIO_Port, LED1_Pin) == GPIO_PIN_SET ? "ON" : "OFF",
@@ -118,7 +118,7 @@ static void uart_process_command(char* cmd)
   } else if (strcasecmp(token, "DUMP") == 0) {
     uint8_t value[EEPROM_SIZE];
     HAL_I2C_Mem_Read(&hi2c1, EEPROM_ADDR, 0, I2C_MEMADD_SIZE_16BIT, value, EEPROM_SIZE, 1000);
-    for (int i = 0; i < EEPROM_SIZE; i++) {
+    for (uint8_t i = 0; i < EEPROM_SIZE; i++) {
       printf("%02X%c", value[i], (i != 0 && (i + 1) % 8 == 0) ? '\n' : ' ');
     }
   }

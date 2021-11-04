@@ -1,0 +1,11 @@
+ntc = csvread('ntc.csv');
+t = ntc(:,1);
+r = ntc(:,2);
+ad = 1024 * r ./ (r + 10);
+figure, plot(ad, t);
+p = polyfit(ad, t, 10);
+ad2 = 0:1023;
+t2 = round(polyval(p, ad2), 1);
+figure;
+hold on, plot(ad2, t2, 'r');
+dlmwrite('data.dlm', t2*10, ',');

@@ -62,6 +62,30 @@ static void MX_ADC_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+static void buttons(uint8_t* s1_state, uint8_t* s2_state)
+{
+	static uint32_t delay;
+	static uint16_t debounce_s1 = 0xFFFF;
+	static uint16_t debounce_s2 = 0xFFFF;
+
+	if (HAL_GetTick() > delay + 5) {
+		uint32_t s1 = HAL_GPIO_ReadPin(S1_GPIO_Port, S1_Pin);
+		uint32_t s2 = HAL_GPIO_ReadPin(S2_GPIO_Port, S2_Pin);
+
+		debounce_s1 <<= 1;
+		debounce_s2 <<= 1;
+		if (s1) debounce_s1 |= 0x0001;
+		if (debounce_s1 == 0x7FFF) *s1_state = 1;
+		else *s1_state = 0;
+
+		if (s2) debounce_s2 |= 0x0001;
+		if (debounce_s2 == 0x7FFF) *s2_state = 1;
+		else *s2_state = 0;
+
+		delay = HAL_GetTick();
+	}
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -99,6 +123,12 @@ int main(void)
   HAL_ADCEx_Calibration_Start(&hadc);
   HAL_ADC_Start(&hadc);
 
+  enum sensor_type {DS, NTC};
+  enum sensor_type state = DS;
+  uint32_t last_conversion;
+  OWConvertAll();
+  last_conversion = HAL_GetTick();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -108,16 +138,39 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-//	  OWConvertAll();
-//	  HAL_Delay(CONVERT_T_DELAY);
-//	  int16_t temperature;
-//	  if (OWReadTemperature(&temperature))
-//	  {
-//		  sct_value(temperature / 10);
-//	  }
-	  HAL_ADCEx_Calibration_Start(&hadc);
-	  HAL_ADC_Start(&hadc);
-	  sct_value(ntc_table[HAL_ADC_GetValue(&hadc)]);
+	  uint8_t s1_state, s2_state;
+	  int16_t temperature_ds, temperature_ntc;
+
+	  buttons(&s1_state, &s2_state);
+
+	  switch (state)
+	  {
+	  case DS:
+		  if (HAL_GetTick() - last_conversion >= CONVERT_T_DELAY)
+		  {
+			  OWReadTemperature(&temperature_ds);
+			  temperature_ds /= 10;
+			  OWConvertAll();
+			  last_conversion = HAL_GetTick();
+		  }
+
+		  HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_SET);
+		  HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+		  sct_value(temperature_ds);
+
+		  if (s2_state) state = NTC;
+		  break;
+	  case NTC:
+
+		  temperature_ntc = ntc_table[HAL_ADC_GetValue(&hadc)];
+
+		  HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+		  HAL_GPIO_WritePin(LED2_GPIO_Port, LED2_Pin, GPIO_PIN_RESET);
+		  sct_value(temperature_ntc);
+
+		  if (s1_state) state = DS;
+		  break;
+	  }
   }
   /* USER CODE END 3 */
 }
